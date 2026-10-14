@@ -1,5 +1,13 @@
 # Datalevin 1.2.2: native memory leak on cursor close
 
+**In short:** every time Datalevin closes a read cursor that has just read an
+entity with lots of data (more than a few kilobytes of datoms), it forgets to
+free a native buffer holding a copy of that data. Nothing frees it later. In a
+running application, which opens and closes cursors constantly, the process
+grows by that entity's size on every such read and never shrinks, even though
+the Java heap looks fine. Below: a 60-line script that shows the growth, and
+where in the C code it happens.
+
 Closing an LMDB cursor that has scanned an entity stored in a sub-database
 leaks about the size of that entity's datoms in native memory, every time.
 Long-running processes grow by gigabytes; the Java heap stays flat.
